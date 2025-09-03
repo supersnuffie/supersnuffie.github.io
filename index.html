@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EduTrack — Student Performance Portal</title>
+
+  <!-- Fonts & icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="" crossorigin="anonymous" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    /* -------------------------
+       Design system & variables
+       ------------------------- */
+    :root{
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --muted: #747f8b;
+      --glass: rgba(255,255,255,0.6);
+      --accent-1: #4361ee; /* primary */
+      --accent-2: #3a0ca3; /* deep */
+      --success: #20c997;
+      --warning: #ffb020;
+      --danger: #ff6b6b;
+      --radius: 12px;
+      --shadow-1: 0 6px 22px rgba(41,52,91,0.08);
+      --shadow-2: 0 2px 10px rgba(41,52,91,0.06);
+      --container: 1100px;
+      font-size: 16px;
+    }
+
+    /* ----------
+       Base reset
+       ---------- */
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, 'Helvetica Neue', Arial;
+      background: linear-gradient(180deg, var(--bg), #eef3f9);
+      color:#0f1724;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      line-height:1.45;
+      padding-bottom:40px;
+    }
+
+    img{max-width:100%;display:block}
+
+    .container{
+      width:100%;
+      max-width:var(--container);
+      margin:0 auto;
+      padding:28px;
+    }
+
+    /* ---------------
+       Top navigation
+       --------------- */
+    header.site-header{
+      background: linear-gradient(90deg,var(--accent-1),var(--accent-2));
+      padding:18px 0; 
+      box-shadow: var(--shadow-2);
+      border-bottom-left-radius:18px;
+      border-bottom-right-radius:18px;
+      margin-bottom:28px;
+    }
+
+    .brand{
+      color:white;
+      font-weight:700;
+      font-size:1.15rem;
+      display:flex;align-items:center;gap:12px
+    }
+
+    .brand .logo{
+      width:46px;height:46px;border-radius:10px;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-size:20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .top-actions{display:flex;gap:12px;align-items:center}
+    .top-actions .btn{background:transparent;border:1px solid rgba(255,255,255,0.12);color:#fff;padding:8px 12px;border-radius:10px;font-weight:600}
+
+    /* ----------
+       Layout grid
+       ---------- */
+    .panel{
+      background: var(--panel);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-1);
+      overflow:hidden;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 320px 1fr;
+      gap:20px;
+      align-items:start;
+    }
+
+    /* -----------------
+       Left column (login)
+       ----------------- */
+    .auth-panel{
+      padding:20px;border-radius:inherit;height:100%;display:flex;flex-direction:column;gap:16px
+    }
+
+    .auth-brand{
+      display:flex;align-items:center;gap:12px
+    }
+
+    .auth-card{padding:18px;background:linear-gradient(180deg, rgba(67,97,238,0.04), rgba(58,12,163,0.02));border-radius:10px}
+
+    label{display:block;margin-bottom:8px;font-weight:600;color:var(--muted);font-size:0.86rem}
+    input[type=text], input[type=password]{width:100%;padding:12px 14px;border-radius:10px;border:1px solid #e6edf3;background:#fbfdff}
+
+    .cta{display:flex;gap:12px}
+    .btn-primary{background:linear-gradient(90deg,var(--accent-1),var(--accent-2));color:#fff;border:none;padding:12px;border-radius:10px;font-weight:700;cursor:pointer}
+    .btn-ghost{background:transparent;border:1px solid #e6edf3;padding:12px;border-radius:10px;cursor:pointer}
+
+    .privacy-note{font-size:0.86rem;color:var(--muted);padding:10px;border-radius:8px;border:1px dashed #eef3f9;background:linear-gradient(180deg,#fff,#fbfdff)}
+
+    /* ---------------
+       Right column (report)
+       --------------- */
+    .report-panel{padding:20px}
+
+    .report-header{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px;border-radius:10px;background:linear-gradient(90deg,#fff, #fbfdff);
+      border:1px solid #f1f5f9
+    }
+
+    .student-meta{display:flex;gap:18px;align-items:center}
+    .avatar{width:76px;height:76px;border-radius:14px;background:linear-gradient(180deg,var(--accent-1),var(--accent-2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:22px}
+
+    .meta .name{font-weight:700;font-size:1.05rem}
+    .meta .muted{color:var(--muted);font-size:0.9rem}
+
+    .badges{display:flex;gap:10px;align-items:center}
+    .badge{padding:8px 12px;border-radius:999px;font-weight:700}
+    .badge.primary{background:linear-gradient(90deg,var(--accent-1),var(--accent-2));color:#fff}
+    .badge.neutral{background:#f1f5f9;color:var(--muted)}
+
+    /* Stats grid */
+    .stats{display:flex;gap:12px;margin-top:18px}
+    .stat{flex:1;background:linear-gradient(180deg,#fff,#fbfdff);padding:16px;border-radius:10px;border:1px solid #f1f5f9}
+    .stat .number{font-size:1.6rem;font-weight:800;color:var(--accent-2)}
+    .stat .label{color:var(--muted);margin-top:6px}
+
+    /* Skills list */
+    .skills{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:18px}
+    .skill{padding:12px;border-radius:10px;border:1px solid #f1f5f9;background:#fff}
+    .skill .title{display:flex;justify-content:space-between;align-items:center;font-weight:600}
+    .progress{height:10px;background:#eef4ff;border-radius:999px;margin-top:8px}
+    .progress > i{display:block;height:100%;border-radius:999px}
+
+    /* Chart area */
+    .chart-wrap{padding:14px;border-radius:10px;border:1px solid #f1f5f9;background:#fff;margin-top:18px}
+    .chart-wrap canvas{width:100%;height:260px}
+
+    /* Table */
+    .table{width:100%;border-collapse:collapse;margin-top:18px}
+    .table th, .table td{padding:12px;border-bottom:1px solid #f1f5f9;text-align:left}
+    .table th{font-weight:700;color:var(--muted);font-size:0.9rem}
+
+    .teacher-notes{margin-top:18px;padding:14px;border-radius:10px;background:linear-gradient(180deg,#fff,#fbfdff);border:1px solid #f1f5f9}
+
+    /* Footer actions */
+    .actions{display:flex;gap:12px;justify-content:center;margin-top:18px}
+
+    /* Small screens */
+    @media (max-width:980px){
+      .grid{grid-template-columns:1fr;}
+      header.site-header{border-radius:0;margin-bottom:14px}
+    }
+
+    @media (max-width:520px){
+      .container{padding:16px}
+      .avatar{width:60px;height:60px}
+      .stats{flex-direction:column}
+      .skills{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="container" style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="brand">
+        <div class="logo"><i class="fas fa-graduation-cap"></i></div>
+        <div>
+          <div style="font-size:0.85rem;opacity:0.95">EduTrack</div>
+          <div style="font-size:0.72rem;opacity:0.9">Student Performance Portal</div>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <div style="color:rgba(255,255,255,0.9);font-weight:600">Secure — FERPA compliant</div>
+        <button class="btn">Support</button>
+        <button class="btn">Sign In</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="panel grid">
+
+      <!-- AUTH / LOGIN -->
+      <aside class="auth-panel">
+        <div class="auth-brand">
+          <div style="font-weight:800;font-size:1.05rem">Welcome back</div>
+          <div style="margin-left:auto;color:var(--muted);font-size:0.9rem">Secure access</div>
+        </div>
+
+        <div class="auth-card">
+          <form id="loginForm" aria-label="Student login form">
+            <div style="margin-bottom:12px">
+              <label for="studentId">Student ID</label>
+              <input id="studentId" type="text" placeholder="e.g. S-2009-112" required aria-required="true">
+            </div>
+
+            <div style="margin-bottom:14px;position:relative">
+              <label for="accessCode">Access Code</label>
+              <input id="accessCode" type="password" placeholder="Enter your access code" required aria-required="true">
+              <button id="passwordToggle" type="button" aria-label="Toggle password visibility" style="position:absolute;right:10px;top:40px;background:none;border:none;color:var(--muted)"><i class="fas fa-eye"></i></button>
+            </div>
+
+            <div class="cta">
+              <button type="submit" class="btn-primary">Access Report</button>
+              <button type="button" class="btn-ghost" id="helpBtn">Help</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="privacy-note">
+          <strong>Privacy</strong> — Your academic records are kept private. Contact support if you need assistance.
+        </div>
+
+        <div style="margin-top:auto;font-size:0.86rem;color:var(--muted);">
+          <div><strong>Tip:</strong> Use your Student ID and one-time Access Code provided by the administration.</div>
+        </div>
+      </aside>
+
+      <!-- REPORT -->
+      <section class="report-panel">
+        <div id="reportSection" class="panel" aria-hidden="true">
+
+          <!-- header / meta -->
+          <div class="report-header">
+            <div class="student-meta">
+              <div class="avatar" id="avatarInitials">ST</div>
+              <div class="meta">
+                <div class="name" id="studentName">Student Name</div>
+                <div class="muted">Report date: <span id="reportDate">—</span></div>
+              </div>
+            </div>
+
+            <div class="badges">
+              <div class="badge primary" id="averageScore">0.0</div>
+              <div class="badge neutral" id="studentID">ID: —</div>
+            </div>
+          </div>
+
+          <!-- quick stats -->
+          <div class="stats">
+            <div class="stat">
+              <div class="number" id="readingStat">0</div>
+              <div class="label">Reading</div>
+            </div>
+            <div class="stat">
+              <div class="number" id="writingStat">0</div>
+              <div class="label">Writing</div>
+            </div>
+            <div class="stat">
+              <div class="number" id="speakingStat">0</div>
+              <div class="label">Speaking</div>
+            </div>
+            <div class="stat">
+              <div class="number" id="listeningStat">0</div>
+              <div class="label">Listening</div>
+            </div>
+          </div>
+
+          <!-- skills + chart -->
+          <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:18px">
+            <div style="flex:0 0 420px;min-width:260px">
+              <div class="skills">
+                <div class="skill">
+                  <div class="title"><span>Reading</span><strong id="readingText">0/100</strong></div>
+                  <div class="progress" aria-hidden="true"><i id="readingBar" style="width:0%;background:linear-gradient(90deg,var(--accent-1),var(--accent-2))"></i></div>
+                </div>
+
+                <div class="skill">
+                  <div class="title"><span>Writing</span><strong id="writingText">0/100</strong></div>
+                  <div class="progress" aria-hidden="true"><i id="writingBar" style="width:0%;background:linear-gradient(90deg,var(--accent-1),var(--accent-2))"></i></div>
+                </div>
+
+                <div class="skill">
+                  <div class="title"><span>Speaking</span><strong id="speakingText">0/100</strong></div>
+                  <div class="progress" aria-hidden="true"><i id="speakingBar" style="width:0%;background:linear-gradient(90deg,var(--accent-1),var(--accent-2))"></i></div>
+                </div>
+
+                <div class="skill">
+                  <div class="title"><span>Listening</span><strong id="listeningText">0/100</strong></div>
+                  <div class="progress" aria-hidden="true"><i id="listeningBar" style="width:0%;background:linear-gradient(90deg,var(--accent-1),var(--accent-2))"></i></div>
+                </div>
+              </div>
+
+              <div class="teacher-notes">
+                <strong>Teacher's feedback</strong>
+                <p id="teacherNotes" style="margin:8px 0 0;color:var(--muted)">No notes available.</p>
+              </div>
+
+            </div>
+
+            <div style="flex:1;min-width:260px">
+              <div class="chart-wrap">
+                <canvas id="performanceChart" aria-label="Student skill radar chart"></canvas>
+              </div>
+
+              <div style="margin-top:12px;display:flex;gap:12px;align-items:center;justify-content:flex-end">
+                <button id="downloadReport" class="btn-primary" title="Download a clean PDF of this report"><i class="fas fa-download" style="margin-right:8px"></i>Download PDF</button>
+                <button id="backToLogin" class="btn-ghost">Back</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- details table -->
+          <div style="margin-top:18px">
+            <table class="table" aria-describedby="detailed view">
+              <thead>
+                <tr><th>Skill</th><th>Score</th><th>Grade</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Reading Comprehension</td><td id="detailReading">0</td><td id="detailReadingGrade">-</td><td id="detailReadingStatus">-</td></tr>
+                <tr><td>Writing</td><td id="detailWriting">0</td><td id="detailWritingGrade">-</td><td id="detailWritingStatus">-</td></tr>
+                <tr><td>Speaking</td><td id="detailSpeaking">0</td><td id="detailSpeakingGrade">-</td><td id="detailSpeakingStatus">-</td></tr>
+                <tr><td>Listening</td><td id="detailListening">0</td><td id="detailListeningGrade">-</td><td id="detailListeningStatus">-</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+        <!-- empty state for when not signed in -->
+        <div id="reportEmpty" style="padding:24px;text-align:center;color:var(--muted)">
+          <p style="margin:0">Sign in to view a detailed student report.</p>
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <footer style="text-align:center;margin-top:24px;color:var(--muted);font-size:0.9rem">
+    © 2025 EduTrack • Secure academic reporting system
+  </footer>
+
+  <script>
+    // --- Keep the original behaviour but with clearer, smaller JS and improved accessibility ---
+
+    let currentStudent = null;
+    let performanceChart = null;
+
+    const loginForm = document.getElementById('loginForm');
+    const passwordToggle = document.getElementById('passwordToggle');
+    const reportSection = document.getElementById('reportSection');
+    const reportEmpty = document.getElementById('reportEmpty');
+    const downloadReportBtn = document.getElementById('downloadReport');
+    const backToLoginBtn = document.getElementById('backToLogin');
+
+    passwordToggle.addEventListener('click', () => {
+      const input = document.getElementById('accessCode');
+      const icon = passwordToggle.querySelector('i');
+      if (!input) return;
+      if (input.type === 'password') { input.type = 'text'; icon.classList.replace('fa-eye','fa-eye-slash'); }
+      else { input.type = 'password'; icon.classList.replace('fa-eye-slash','fa-eye'); }
+    });
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const studentId = document.getElementById('studentId').value.trim();
+      const accessCode = document.getElementById('accessCode').value.trim();
+
+      if (!studentId || !accessCode) { alert('Please enter both Student ID and Access Code.'); return; }
+
+      // Loading state
+      const btn = loginForm.querySelector('button[type=submit]');
+      const prev = btn.innerHTML;
+      btn.innerHTML = 'Authenticating...'; btn.disabled = true;
+
+      try {
+        const valid = await validateCredentials(studentId, accessCode);
+        if (!valid) { alert('Invalid Student ID or Access Code.'); return; }
+
+        const student = await fetchStudentData(studentId);
+        if (!student) { alert('Could not load student data.'); return; }
+
+        currentStudent = student;
+        renderReport(student);
+
+      } catch (err){ console.error(err); alert('An error occurred.'); }
+      finally{ btn.innerHTML = prev; btn.disabled = false; }
+    });
+
+    async function validateCredentials(studentId, accessCode){
+      try{
+        const res = await fetch('credentials.json');
+        if (!res.ok) return false;
+        const data = await res.json();
+        return data.students?.some(s => s.id === studentId && s.accessCode === accessCode);
+      }catch(e){console.error(e);return false}
+    }
+
+    async function fetchStudentData(studentId){
+      try{
+        const res = await fetch('students.json'); if (!res.ok) return null;
+        const data = await res.json();
+        return data.students?.find(s => s.id === studentId) || null;
+      }catch(e){console.error(e);return null}
+    }
+
+    function calculateGrade(score){ if(score>=90) return 'A'; if(score>=80) return 'B'; if(score>=70) return 'C'; if(score>=60) return 'D'; return 'F'; }
+    function getPerformanceStatus(score){ if(score>=90) return 'Excellent'; if(score>=80) return 'Good'; if(score>=70) return 'Average'; if(score>=60) return 'Needs Improvement'; return 'Poor'; }
+
+    function renderReport(student){
+      reportEmpty.style.display = 'none';
+      reportSection.style.display = 'block';
+      reportSection.setAttribute('aria-hidden', 'false');
+
+      document.getElementById('studentName').textContent = student.name;
+      document.getElementById('studentID').textContent = 'ID: ' + student.id;
+      document.getElementById('reportDate').textContent = student.date || new Date().toLocaleDateString();
+      document.getElementById('averageScore').textContent = (student.average||0).toFixed(1);
+
+      // initials
+      const initials = student.name.split(' ').map(n => n[0]).slice(0,2).join('').toUpperCase();
+      document.getElementById('avatarInitials').textContent = initials;
+
+      // Stats
+      ['reading','writing','speaking','listening'].forEach(k => {
+        const val = student[k] || 0;
+        document.getElementById(k + 'Stat').textContent = val;
+        document.getElementById(k + 'Text').textContent = val + '/100';
+        document.getElementById(k + 'Bar').style.width = val + '%';
+
+        document.getElementById('detail' + capitalize(k)).textContent = val;
+        document.getElementById('detail' + capitalize(k) + 'Grade').textContent = calculateGrade(val);
+        document.getElementById('detail' + capitalize(k) + 'Status').textContent = getPerformanceStatus(val);
+      });
+
+      document.getElementById('teacherNotes').textContent = student.notes || 'No notes available.';
+
+      renderChart(student);
+    }
+
+    function renderChart(student){
+      const ctx = document.getElementById('performanceChart').getContext('2d');
+      if (performanceChart) performanceChart.destroy();
+
+      performanceChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: ['Reading','Writing','Speaking','Listening'],
+          datasets: [{
+            label: 'Skill score',
+            data: [student.reading||0, student.writing||0, student.speaking||0, student.listening||0],
+            fill: true,
+            backgroundColor: 'rgba(67,97,238,0.12)',
+            borderColor: 'rgba(67,97,238,1)',
+            pointBackgroundColor: 'rgba(67,97,238,1)'
+          }]
+        },
+        options: {
+          responsive:true,maintainAspectRatio:false,
+          scales:{r:{suggestedMin:0,suggestedMax:100,ticks:{stepSize:20}}}
+        }
+      });
+    }
+
+    downloadReportBtn?.addEventListener('click', () => {
+      if (!currentStudent) { alert('Sign in to download the report.'); return; }
+      const card = document.querySelector('.report-panel .panel');
+      const clone = card.cloneNode(true);
+      const wrapper = document.createElement('div'); wrapper.style.padding='18px'; wrapper.appendChild(clone);
+      html2pdf().from(wrapper).set({margin:10,filename:`student-report-${currentStudent.id}.pdf`,jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).save();
+    });
+
+    backToLoginBtn?.addEventListener('click', () => { document.getElementById('reportSection').style.display='none'; reportEmpty.style.display='block'; currentStudent=null; loginForm.reset(); if(performanceChart) performanceChart.destroy(); });
+
+    function capitalize(s){return s.charAt(0).toUpperCase()+s.slice(1)}
+
+    // initial UI state
+    reportSection.style.display = 'none';
+    reportEmpty.style.display = 'block';
+
+  </script>
+</body>
+</html>
