@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EduTrack • Next‑Gen Student Dashboard</title>
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    :root {
+      /* THEME — default (Aurora) */
+      --bg: #0b1020;
+      --glass: rgba(255,255,255,0.08);
+      --border: rgba(255,255,255,0.18);
+      --text: #eef2ff;
+      --muted: #a9b4d0;
+      --primary: #7c9cf5;  /* used for accents */
+      --accent: #8b5cf6;   /* purple */
+      --accent-2: #06b6d4; /* cyan */
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger:  #ef4444;
+      --glow: 0 0 0px rgba(255,255,255,0), 0 0 30px rgba(124,156,245,.18);
+    }
+
+    /* THEMES (switch via data-theme on <html>) */
+    html[data-theme="mint"] {
+      --bg: #081a16;
+      --glass: rgba(255,255,255,0.08);
+      --border: rgba(255,255,255,0.16);
+      --text: #eafff7;
+      --muted: #b6e3d4;
+      --primary: #2dd4bf;
+      --accent: #34d399;
+      --accent-2: #22d3ee;
+      --glow: 0 0 0px rgba(255,255,255,0), 0 0 30px rgba(45,212,191,.18);
+    }
+    html[data-theme="sunset"] {
+      --bg: #120c18;
+      --glass: rgba(255,255,255,0.08);
+      --border: rgba(255,255,255,0.16);
+      --text: #fff6f0;
+      --muted: #ffd4bf;
+      --primary: #fb7185;
+      --accent: #f97316;
+      --accent-2: #f59e0b;
+      --glow: 0 0 0px rgba(255,255,255,0), 0 0 30px rgba(251,113,133,.18);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, rgba(139,92,246,.25), transparent 60%),
+                  radial-gradient(1000px 600px at 110% 10%, rgba(34,211,238,.18), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+      overflow-x:hidden;
+    }
+
+    /* Topbar */
+    .nav-glass{
+      backdrop-filter: blur(14px);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+      border-bottom:1px solid var(--border);
+    }
+    .brand-badge{
+      display:inline-flex;align-items:center;gap:.6rem;font-weight:800;letter-spacing:.3px;
+      background:linear-gradient(135deg,var(--primary),var(--accent));
+      -webkit-background-clip:text;background-clip:text;color:transparent;font-size:1.1rem
+    }
+
+    /* Layout */
+    .container-xl{max-width:1200px}
+    .grid{display:grid;gap:24px}
+    @media(min-width:992px){
+      .grid-12{grid-template-columns:repeat(12,1fr)}
+      .span-8{grid-column:span 8}
+      .span-4{grid-column:span 4}
+      .span-6{grid-column:span 6}
+      .span-12{grid-column:span 12}
+    }
+
+    /* Glass Card */
+    .card-glass{
+      position:relative;border:1px solid var(--border);border-radius:18px;padding:20px;overflow:hidden;
+      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+      box-shadow: var(--glow);
+    }
+    .card-glass:hover{transform:translateY(-2px);transition:transform .25s ease}
+
+    /* Section title */
+    .section-title{font-weight:800;font-size:1.05rem;letter-spacing:.3px;margin-bottom:12px}
+    .section-title .dot{display:inline-block;width:8px;height:8px;border-radius:50%;
+      background:linear-gradient(135deg,var(--accent),var(--accent-2));margin-right:8px;box-shadow:0 0 10px rgba(139,92,246,.5)}
+
+    /* Login */
+    .login-wrap{min-height:calc(100vh - 64px);display:grid;place-items:center;padding:40px}
+    .login-card{max-width:520px;width:100%}
+    .input-glass{background:rgba(255,255,255,.06)!important;border:1px solid var(--border)!important;color:var(--text)!important}
+    .input-glass::placeholder{color:var(--muted)}
+    .btn-primary-neo{
+      --_bg: linear-gradient(135deg,var(--primary),var(--accent));
+      background: var(--_bg); border:0; color:white; font-weight:700; border-radius:12px; padding:12px 16px;
+      box-shadow:0 10px 25px rgba(124,156,245,.18);
+    }
+    .btn-outline-glass{border:1px solid var(--border); color:var(--text); background:rgba(255,255,255,.02); border-radius:12px}
+
+    /* Avatar badge */
+    .id-badge{display:inline-flex;align-items:center;gap:.5rem;border:1px dashed var(--border);padding:6px 10px;border-radius:20px;font-size:.85rem;color:var(--muted)}
+
+    /* Progress Rings (CSS conic-gradient) */
+    .ring{--val:0;--size:110px;--thick:12px;--track:rgba(255,255,255,.08);--grad: conic-gradient(var(--accent) calc(var(--val)*1%), transparent 0)}
+    .ring{width:var(--size);height:var(--size);border-radius:50%;display:grid;place-items:center;position:relative}
+    .ring::before{content:"";position:absolute;inset:0;border-radius:50%;background:var(--grad)}
+    .ring::after{content:"";position:absolute;inset:calc(var(--thick));border-radius:50%;background:var(--glass);border:1px solid var(--border)}
+    .ring-val{position:relative;font-weight:800;font-size:1.1rem}
+    .pill{display:inline-flex;align-items:center;gap:.5rem;padding:6px 10px;border-radius:999px;border:1px solid var(--border);color:var(--muted)}
+
+    /* Teacher note */
+    .note{
+      position:relative;padding:18px;border-radius:16px;border:1px solid var(--border);
+      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+    }
+    .note:after{content:"";position:absolute;left:24px;bottom:-14px;border:8px solid transparent;border-top-color:var(--border)}
+
+    /* Footer */
+    footer{border-top:1px solid var(--border);background:rgba(255,255,255,.03)}
+
+    /* Floating theme switcher */
+    .theme-switch{position:fixed;right:16px;bottom:16px;display:flex;gap:10px;z-index:999}
+    .theme-dot{width:34px;height:34px;border-radius:50%;border:1px solid var(--border);cursor:pointer;box-shadow:var(--glow)}
+    .t-aurora{background:linear-gradient(135deg,#7c9cf5,#8b5cf6)}
+    .t-mint{background:linear-gradient(135deg,#2dd4bf,#22d3ee)}
+    .t-sunset{background:linear-gradient(135deg,#fb7185,#f59e0b)}
+
+    .small-muted{color:var(--muted);font-size:.9rem}
+  </style>
+</head>
+<body>
+  <!-- Topbar -->
+  <nav class="navbar nav-glass sticky-top">
+    <div class="container-xl d-flex align-items-center justify-content-between py-2">
+      <div class="d-flex align-items-center gap-3">
+        <span class="brand-badge"><i class="fa-solid fa-graduation-cap me-2"></i>EduTrack</span>
+        <span id="liveStudent" class="d-none small-muted">Welcome, <strong id="liveStudentName"></strong></span>
+      </div>
+      <div class="d-flex gap-2">
+        <button id="btnDownload" class="btn btn-outline-glass btn-sm d-none"><i class="fa-solid fa-download me-1"></i>PDF</button>
+        <button id="btnLogout" class="btn btn-outline-glass btn-sm d-none"><i class="fa-solid fa-arrow-right-from-bracket me-1"></i>Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- LOGIN -->
+  <section id="loginSection" class="login-wrap">
+    <div class="card-glass login-card p-4 p-md-5">
+      <div class="text-center mb-3">
+        <i class="fa-solid fa-shield-halved" style="font-size:2.4rem;color:var(--primary)"></i>
+        <h1 class="mt-2 fw-800" style="font-weight:800">Secure Student Portal</h1>
+        <p class="small-muted">Use your Student ID and Access Code to view your personalized report.</p>
+      </div>
+      <form id="loginForm" class="mt-3">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label small-muted">Student ID</label>
+            <input id="studentId" class="form-control form-control-lg input-glass" placeholder="e.g. S-001" required />
+          </div>
+          <div class="col-12 position-relative">
+            <label class="form-label small-muted">Access Code</label>
+            <input id="accessCode" type="password" class="form-control form-control-lg input-glass" placeholder="••••••" required />
+            <button type="button" id="togglePwd" class="btn btn-sm btn-outline-glass position-absolute" style="right:8px;top:36px"><i class="fa-solid fa-eye"></i></button>
+          </div>
+          <div class="col-12 d-grid">
+            <button class="btn btn-primary-neo btn-lg" type="submit"><i class="fa-solid fa-lock me-2"></i>Access My Report</button>
+          </div>
+        </div>
+      </form>
+      <div class="mt-3 small-muted"><i class="fa-solid fa-circle-exclamation me-1"></i>Your records are protected. By continuing you agree to privacy policies.</div>
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="dashboardSection" class="py-4 d-none">
+    <div class="container-xl grid grid-12">
+      <!-- Header / Identity -->
+      <div class="span-12 card-glass d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="d-flex align-items-center gap-3">
+          <img id="avatar" alt="avatar" width="56" height="56" class="rounded-circle border" style="border-color:var(--border)!important" src="https://api.dicebear.com/8.x/thumbs/svg?seed=student"/>
+          <div>
+            <div class="section-title mb-1"><span class="dot"></span>Welcome, <span id="studentName">Student</span></div>
+            <div class="id-badge"><i class="fa-solid fa-id-card-clip"></i> <span id="studentIdLabel">—</span> • <span id="levelBadge">Bronze</span></div>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="pill"><i class="fa-solid fa-gauge-high"></i><span id="avgPill">Avg 0</span></span>
+          <span class="pill"><i class="fa-solid fa-arrow-trend-up"></i><span id="trendPill">Trend —</span></span>
+        </div>
+      </div>
+
+      <!-- Overview + Quick stats -->
+      <div class="span-8 card-glass">
+        <div class="section-title"><span class="dot"></span>Performance Overview</div>
+        <div class="row g-3">
+          <!-- Rings -->
+          <div class="col-6 col-lg-3 text-center">
+            <div class="ring mx-auto" id="ringReading" style="--val:0"><div class="ring-val" id="ringReadingVal">0</div></div>
+            <div class="mt-2 small-muted">Reading</div>
+          </div>
+          <div class="col-6 col-lg-3 text-center">
+            <div class="ring mx-auto" id="ringWriting" style="--val:0"><div class="ring-val" id="ringWritingVal">0</div></div>
+            <div class="mt-2 small-muted">Writing</div>
+          </div>
+          <div class="col-6 col-lg-3 text-center">
+            <div class="ring mx-auto" id="ringSpeaking" style="--val:0"><div class="ring-val" id="ringSpeakingVal">0</div></div>
+            <div class="mt-2 small-muted">Speaking</div>
+          </div>
+          <div class="col-6 col-lg-3 text-center">
+            <div class="ring mx-auto" id="ringListening" style="--val:0"><div class="ring-val" id="ringListeningVal">0</div></div>
+            <div class="mt-2 small-muted">Listening</div>
+          </div>
+        </div>
+        <hr class="my-4" style="border-color:var(--border)">
+        <!-- Chart 1: Radar -->
+        <div>
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="pill"><i class="fa-solid fa-chart-radar"></i> Skill Balance</span>
+          </div>
+          <canvas id="chartRadar" height="220"></canvas>
+        </div>
+      </div>
+
+      <!-- Quick Stats Card -->
+      <div class="span-4 card-glass">
+        <div class="section-title"><span class="dot"></span>Quick Stats</div>
+        <div class="vstack gap-2">
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="small-muted"><i class="fa-solid fa-star me-2" style="color:var(--accent)"></i>Average</span>
+            <strong id="quickAvg">—</strong>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="small-muted"><i class="fa-solid fa-medal me-2" style="color:var(--accent)"></i>Level</span>
+            <strong id="quickLevel">—</strong>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="small-muted"><i class="fa-solid fa-calendar-days me-2" style="color:var(--accent)"></i>Last Updated</span>
+            <strong id="quickUpdated">—</strong>
+          </div>
+        </div>
+        <hr class="my-3" style="border-color:var(--border)">
+        <!-- Chart 2: Doughnut for Average -->
+        <div class="text-center">
+          <canvas id="chartDoughnut" height="160"></canvas>
+          <div class="small-muted mt-2">Completion to 100</div>
+        </div>
+      </div>
+
+      <!-- Trends / Analysis -->
+      <div class="span-6 card-glass">
+        <div class="section-title"><span class="dot"></span>Progress Over Time</div>
+        <!-- Chart 3: Line Trend -->
+        <canvas id="chartLine" height="220"></canvas>
+      </div>
+      <div class="span-6 card-glass">
+        <div class="section-title"><span class="dot"></span>Skill Comparison</div>
+        <!-- Chart 4: Bar Compare -->
+        <canvas id="chartBar" height="220"></canvas>
+      </div>
+
+      <!-- Teacher Feedback -->
+      <div class="span-12 card-glass">
+        <div class="section-title"><span class="dot"></span>Teacher's Feedback</div>
+        <div class="note">
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2"><i class="fa-solid fa-message"></i> <strong>Summary</strong></div>
+            <span id="sentiment" class="pill"><i class="fa-solid fa-face-smile"></i> Positive</span>
+          </div>
+          <p id="teacherNote" class="mb-0 mt-2 small-muted">—</p>
+        </div>
+      </div>
+
+      <div class="span-12 text-center small-muted">This report contains confidential academic information. Do not share without authorization.</div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-4 mt-4">
+    <div class="container-xl d-flex flex-wrap align-items-center justify-content-between small-muted">
+      <div>© <span id="year"></span> EduTrack • FERPA Compliant</div>
+      <div>Support: support@edutrack.com</div>
+    </div>
+  </footer>
+
+  <!-- Floating Theme Switcher -->
+  <div class="theme-switch">
+    <div title="Aurora" class="theme-dot t-aurora" data-theme="aurora"></div>
+    <div title="Mint" class="theme-dot t-mint" data-theme="mint"></div>
+    <div title="Sunset" class="theme-dot t-sunset" data-theme="sunset"></div>
+  </div>
+
+  <!-- Scripts -->
+  <script>
+    const $ = (sel)=>document.querySelector(sel);
+
+    // Demo fallback data (used if external JSON isn't available)
+    const FALLBACK = {
+      students:[
+        {id:"S-001", accessCode:"123456", name:"Ava Popova", average:86, reading:90, writing:82, speaking:80, listening:92, 
+         notes:"Excellent comprehension. Writing clarity improving. Keep practicing spontaneous speaking.",
+         updated:"2025-09-01",
+         monthly:{labels:["Apr","May","Jun","Jul","Aug","Sep"], values:[78,82,84,85,86,88]}}
+      ]
+    };
+
+    let state = { student:null, charts:{} };
+
+    // THEME SWITCHING
+    const setTheme = (name)=>{
+      if(name==='mint') document.documentElement.setAttribute('data-theme','mint');
+      else if(name==='sunset') document.documentElement.setAttribute('data-theme','sunset');
+      else document.documentElement.setAttribute('data-theme','aurora');
+      localStorage.setItem('edutrack-theme', name);
+    };
+    document.querySelectorAll('.theme-dot').forEach(dot=>{
+      dot.addEventListener('click', ()=> setTheme(dot.dataset.theme));
+    });
+    setTheme(localStorage.getItem('edutrack-theme')||'aurora');
+
+    // UTIL
+    const fmt = (n)=>Math.round(n);
+    const levelFromAvg = (avg)=> avg>=90?"Diamond":avg>=80?"Gold":avg>=70?"Silver":"Bronze";
+    const sentimentFromAvg = (avg)=> avg>=85?{icon:'face-smile', label:'Positive'}:avg>=70?{icon:'face-meh',label:'Neutral'}:{icon:'face-frown',label:'Needs Work'};
+
+    // Login with external JSON fallback
+    const tryFetch = async (url)=>{
+      try{ const r = await fetch(url); if(!r.ok) throw new Error('fetch failed'); return await r.json(); }catch(e){ return null; }
+    };
+
+    const credentialsFlow = async (id, code)=>{
+      const creds = await tryFetch('credentials.json');
+      const students = await tryFetch('students.json');
+      if(creds && students){
+        const ok = creds.students.find(s=>s.id===id && s.accessCode===code);
+        if(!ok) return null;
+        return students.students.find(s=>s.id===id);
+      }
+      // fallback local demo
+      const demo = FALLBACK.students.find(s=>s.id===id && s.accessCode===code);
+      return demo || null;
+    };
+
+    // UI BINDINGS
+    $('#togglePwd').addEventListener('click',()=>{
+      const i = $('#accessCode');
+      const isPwd = i.type==='password';
+      i.type = isPwd?'text':'password';
+      $('#togglePwd').innerHTML = `<i class="fa-solid fa-${isPwd?'eye-slash':'eye'}"></i>`;
+    });
+
+    $('#loginForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const id = $('#studentId').value.trim();
+      const code = $('#accessCode').value.trim();
+      const btn = e.submitter || $('#loginForm button[type="submit"]');
+      const old = btn.innerHTML; btn.disabled=true; btn.innerHTML='<span class="spinner-border spinner-border-sm me-2"></span>Authenticating…';
+      const data = await credentialsFlow(id, code);
+      btn.disabled=false; btn.innerHTML=old;
+      if(!data){ alert('Invalid credentials.'); return; }
+      loadDashboard(data);
+    });
+
+    // CORE DASHBOARD
+    function loadDashboard(student){
+      state.student = student;
+      $('#loginSection').classList.add('d-none');
+      $('#dashboardSection').classList.remove('d-none');
+      $('#btnLogout').classList.remove('d-none');
+      $('#btnDownload').classList.remove('d-none');
+      $('#liveStudent').classList.remove('d-none');
+
+      // Populate identity
+      $('#studentName').textContent = student.name;
+      $('#liveStudentName').textContent = student.name;
+      $('#studentIdLabel').textContent = student.id;
+      $('#quickUpdated').textContent = student.updated || new Date().toISOString().slice(0,10);
+
+      // Averages + badges
+      const avg = Number(student.average)||0;
+      const level = levelFromAvg(avg);
+      $('#avgPill').textContent = `Avg ${fmt(avg)}`;
+      $('#quickAvg').textContent = fmt(avg);
+      $('#levelBadge').textContent = level;
+      $('#quickLevel').textContent = level;
+
+      // Sentiment
+      const s = sentimentFromAvg(avg);
+      $('#sentiment').innerHTML = `<i class="fa-solid fa-${s.icon}"></i> ${s.label}`;
+
+      // Teacher note
+      $('#teacherNote').textContent = student.notes || '—';
+
+      // Rings
+      setRing('#ringReading', '#ringReadingVal', student.reading||0);
+      setRing('#ringWriting', '#ringWritingVal', student.writing||0);
+      setRing('#ringSpeaking', '#ringSpeakingVal', student.speaking||0);
+      setRing('#ringListening', '#ringListeningVal', student.listening||0);
+
+      // Trend pill
+      const mv = (student.monthly?.values||[]);
+      const trend = mv.length>=2 ? Math.sign(mv.at(-1)-mv.at(-2)) : 0;
+      $('#trendPill').textContent = trend>0? 'Trend Up' : trend<0? 'Trend Down' : 'Stable';
+
+      // Charts
+      buildCharts(student);
+    }
+
+    function setRing(sel,valSel,val){
+      const pct = Math.max(0, Math.min(100, Number(val)||0));
+      const el = document.querySelector(sel);
+      el.style.setProperty('--val', pct);
+      document.querySelector(valSel).textContent = pct;
+    }
+
+    // CHARTS (4 types)
+    function buildCharts(s){
+      // Reset existing charts
+      Object.values(state.charts).forEach(c=>{try{c.destroy()}catch{}});
+      state.charts = {};
+
+      // Theme-aware colors
+      const css = getComputedStyle(document.documentElement);
+      const accent = css.getPropertyValue('--accent').trim();
+      const accent2 = css.getPropertyValue('--accent-2').trim();
+      const text = css.getPropertyValue('--text').trim();
+      const grid = 'rgba(255,255,255,.12)';
+
+      // Radar
+      state.charts.radar = new Chart($('#chartRadar'),{
+        type:'radar',
+        data:{ labels:['Reading','Writing','Speaking','Listening'], datasets:[{ label:'Skills', data:[s.reading,s.writing,s.speaking,s.listening], backgroundColor:hexToRgba(accent,0.22), borderColor:accent, pointBackgroundColor:accent2, pointBorderColor:'#fff', pointRadius:4 }]},
+        options:{ scales:{ r:{ suggestedMin:0, suggestedMax:100, grid:{color:grid}, angleLines:{color:grid}, ticks:{display:false}, pointLabels:{color:text,font:{weight:700}} } }, plugins:{ legend:{display:false} } }
+      });
+
+      // Doughnut for average
+      state.charts.doughnut = new Chart($('#chartDoughnut'),{
+        type:'doughnut',
+        data:{ labels:['Average','Remaining'], datasets:[{ data:[s.average,100-(s.average||0)], backgroundColor:[accent2,'rgba(255,255,255,.08)'], borderWidth:0 }] },
+        options:{ cutout:'70%', plugins:{ legend:{display:false}, tooltip:{enabled:false} } }
+      });
+
+      // Line (progress over time)
+      const labels = s.monthly?.labels || ['Apr','May','Jun','Jul','Aug','Sep'];
+      const values = s.monthly?.values || [70,74,78,80,83,86];
+      state.charts.line = new Chart($('#chartLine'),{
+        type:'line',
+        data:{ labels, datasets:[{ label:'Average', data:values, fill:true, borderColor:accent2, backgroundColor:hexToRgba(accent2,0.18), tension:.35, pointRadius:3 }]},
+        options:{ scales:{ x:{ grid:{color:grid}, ticks:{color:text} }, y:{ beginAtZero:true, max:100, grid:{color:grid}, ticks:{color:text} } }, plugins:{ legend:{display:false} } }
+      });
+
+      // Bar (skill comparison)
+      state.charts.bar = new Chart($('#chartBar'),{
+        type:'bar',
+        data:{ labels:['Reading','Writing','Speaking','Listening'], datasets:[{ label:'Score', data:[s.reading,s.writing,s.speaking,s.listening], backgroundColor:[accent,accent2,accent,accent2], borderWidth:0, borderRadius:8 }]},
+        options:{ scales:{ x:{ grid:{display:false}, ticks:{color:text} }, y:{ beginAtZero:true, max:100, grid:{color:grid}, ticks:{color:text} } }, plugins:{ legend:{display:false} } }
+      });
+    }
+
+    function hexToRgba(hex, alpha){
+      // supports #rrggbb
+      const m = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(hex);
+      if(!m) return hex; const r=parseInt(m[1],16), g=parseInt(m[2],16), b=parseInt(m[3],16); return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    // PDF export (only dashboard grid)
+    $('#btnDownload').addEventListener('click',()=>{
+      const el = document.querySelector('#dashboardSection .container-xl');
+      const opt = { margin:10, filename:`student-report-${(state.student?.id)||'demo'}.pdf`, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'} };
+      html2pdf().set(opt).from(el).save();
+    });
+
+    // Logout
+    $('#btnLogout').addEventListener('click',()=>{
+      state.student=null;
+      $('#dashboardSection').classList.add('d-none');
+      $('#loginSection').classList.remove('d-none');
+      $('#btnLogout').classList.add('d-none');
+      $('#btnDownload').classList.add('d-none');
+      $('#liveStudent').classList.add('d-none');
+      // destroy charts
+      Object.values(state.charts).forEach(c=>{try{c.destroy()}catch{}});
+      state.charts={};
+      $('#loginForm').reset();
+      $('#accessCode').type='password';
+      $('#togglePwd').innerHTML='<i class="fa-solid fa-eye"></i>';
+    });
+
+    // Footer year
+    $('#year').textContent = new Date().getFullYear();
+  </script>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
