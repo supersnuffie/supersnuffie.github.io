@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduTrack | Student Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4A90E2;
+            --secondary-color: #50E3C2;
+            --background-color: #f8f9fa;
+            --card-background: #ffffff;
+            --text-color: #333;
+            --heading-color: #111;
+            --muted-text-color: #6c757d;
+            --border-color: #e9ecef;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+            --card-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            --font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--background-color);
+            font-family: var(--font-family);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .navbar {
+            background: var(--card-background) !important;
+            box-shadow: var(--shadow);
+            padding: 1rem 0;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.75rem;
+            color: var(--primary-color) !important;
+        }
+
+        .card {
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            background: var(--card-background);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            font-weight: 600;
+            padding: 12px 24px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #357ABD;
+            border-color: #357ABD;
+            box-shadow: 0 4px 8px rgba(74, 144, 226, 0.3);
+        }
+
+        .login-container {
+            max-width: 450px;
+            margin: 80px auto;
+            padding: 40px;
+            background: var(--card-background);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .section-title {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--heading-color);
+            margin-bottom: 24px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--primary-color);
+            display: inline-block;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+        }
+
+        .performance-overview { grid-column: span 12; }
+        .skills-assessment { grid-column: span 6; }
+        .performance-analysis { grid-column: span 6; }
+        .quick-stats { grid-column: span 4; }
+        .teacher-feedback { grid-column: span 8; }
+
+
+        .stats-card {
+            background: var(--card-background);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--card-shadow);
+        }
+
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .stats-label {
+            color: var(--muted-text-color);
+            font-weight: 500;
+        }
+        
+        .skill-bar {
+            height: 12px;
+            border-radius: 12px;
+            background-color: var(--border-color);
+        }
+
+        .progress-bar {
+            background-color: var(--primary-color);
+        }
+        
+        .welcome-message h1 {
+            font-weight: 700;
+            font-size: 2.25rem;
+            color: var(--heading-color);
+        }
+
+        .welcome-message p {
+            color: var(--muted-text-color);
+            font-size: 1.1rem;
+        }
+
+        .teacher-notes {
+            background-color: #f0f6ff;
+            border-left: 4px solid var(--primary-color);
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 992px) {
+            .skills-assessment, .performance-analysis, .quick-stats, .teacher-feedback {
+                grid-column: span 12;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-graduation-cap me-2"></i>EduTrack
+            </a>
+            <div class="d-flex align-items-center">
+                <span id="studentWelcome" class="text-dark me-3 d-none align-self-center fs-5">Welcome, <span id="currentStudentName" class="fw-bold"></span></span>
+                <button id="logoutBtn" class="btn btn-outline-primary btn-sm d-none">
+                    <i class="fas fa-sign-out-alt me-1"></i> Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Login Section -->
+    <section id="loginSection">
+        <div class="container">
+            <div class="login-container text-center">
+                <i class="fas fa-book-reader fa-3x text-primary mb-4"></i>
+                <h2 class="fw-bold mb-3">Student Portal Login</h2>
+                <p class="text-muted mb-4">Access your personalized academic dashboard.</p>
+                <form id="loginForm">
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="studentId" placeholder="Enter your student ID" required>
+                        <label for="studentId">Student ID</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="password" class="form-control" id="accessCode" placeholder="Enter your access code" required>
+                        <label for="accessCode">Access Code</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-3">Access My Dashboard</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard Section (Initially Hidden) -->
+    <section id="dashboardSection" class="d-none">
+        <div class="dashboard-container">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="welcome-message">
+                    <h1>Hello, <span id="dashboardStudentName">Student Name</span></h1>
+                    <p>Here is your academic performance at a glance.</p>
+                </div>
+                <div>
+                    <button id="downloadReport" class="btn btn-primary">
+                        <i class="fas fa-download me-2"></i> Download Report
+                    </button>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="performance-overview card">
+                    <div class="card-body p-4">
+                        <h4 class="section-title">Overall Performance</h4>
+                        <div class="row">
+                            <div class="col-md-4 text-center">
+                                <div class="average-grade display-1 fw-bold text-primary" id="dashboardAverageScore">0.0</div>
+                                <div class="grade-label fs-4 text-muted">Average Score</div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="row">
+                                    <div class="col-6 col-md-3 mb-3"><div class="stats-card"><div class="stats-number" id="dashboardReadingStat">0</div><div class="stats-label">Reading</div></div></div>
+                                    <div class="col-6 col-md-3 mb-3"><div class="stats-card"><div class="stats-number" id="dashboardWritingStat">0</div><div class="stats-label">Writing</div></div></div>
+                                    <div class="col-6 col-md-3 mb-3"><div class="stats-card"><div class="stats-number" id="dashboardSpeakingStat">0</div><div class="stats-label">Speaking</div></div></div>
+                                    <div class="col-6 col-md-3 mb-3"><div class="stats-card"><div class="stats-number" id="dashboardListeningStat">0</div><div class="stats-label">Listening</div></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="skills-assessment card">
+                     <div class="card-body p-4">
+                        <h4 class="section-title">Skills Assessment</h4>
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between mb-1"><span>Reading</span><span id="dashboardReadingText">0/100</span></div>
+                            <div class="progress skill-bar"><div id="dashboardReadingBar" class="progress-bar" role="progressbar" style="width: 0%"></div></div>
+                        </div>
+                        <div class="mb-4">
+                             <div class="d-flex justify-content-between mb-1"><span>Writing</span><span id="dashboardWritingText">0/100</span></div>
+                            <div class="progress skill-bar"><div id="dashboardWritingBar" class="progress-bar" role="progressbar" style="width: 0%"></div></div>
+                        </div>
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between mb-1"><span>Speaking</span><span id="dashboardSpeakingText">0/100</span></div>
+                            <div class="progress skill-bar"><div id="dashboardSpeakingBar" class="progress-bar" role="progressbar" style="width: 0%"></div></div>
+                        </div>
+                        <div>
+                             <div class="d-flex justify-content-between mb-1"><span>Listening</span><span id="dashboardListeningText">0/100</span></div>
+                            <div class="progress skill-bar"><div id="dashboardListeningBar" class="progress-bar" role="progressbar" style="width: 0%"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="performance-analysis card">
+                    <div class="card-body p-4">
+                        <h4 class="section-title">Performance Analysis</h4>
+                        <canvas id="dashboardPerformanceChart" height="300"></canvas>
+                    </div>
+                </div>
+
+                <div class="teacher-feedback card">
+                     <div class="card-body p-4">
+                        <h4 class="section-title">Teacher's Feedback</h4>
+                        <div class="teacher-notes">
+                            <p id="dashboardTeacherNotes" class="mb-0">No notes available.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="text-center py-4 mt-5">
+        <p class="mb-0">&copy; 2025 EduTrack Student Portal. All Rights Reserved.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Existing JavaScript code remains the same.
+        // No changes are needed in the script for this redesign.
+        let currentStudent = null;
+        let performanceChart = null;
+
+        const loginSection = document.getElementById('loginSection');
+        const dashboardSection = document.getElementById('dashboardSection');
+        const loginForm = document.getElementById('loginForm');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const studentWelcome = document.getElementById('studentWelcome');
+        const currentStudentName = document.getElementById('currentStudentName');
+        const downloadReportBtn = document.getElementById('downloadReport');
+        
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const studentId = document.getElementById('studentId').value.trim();
+            const accessCode = document.getElementById('accessCode').value.trim();
+            
+            const submitBtn = loginForm.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...';
+            submitBtn.disabled = true;
+            
+            try {
+                const isValid = await validateCredentials(studentId, accessCode);
+                
+                if (isValid) {
+                    const studentData = await fetchStudentData(studentId);
+                    if (studentData) {
+                        currentStudent = studentData;
+                        showStudentDashboard(studentData);
+                    } else {
+                        alert('Could not retrieve your report data.');
+                    }
+                } else {
+                    alert('Invalid Student ID or Access Code.');
+                }
+            } catch (error) {
+                console.error('Error during authentication:', error);
+                alert('An error occurred. Please try again later.');
+            } finally {
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        async function validateCredentials(studentId, accessCode) {
+            // This is a mock validation. In a real application, this would be a secure API call.
+            const credentials = {
+                "S1001": "PASS123",
+                "S1002": "CODE456"
+            };
+            return credentials[studentId] === accessCode;
+        }
+
+        async function fetchStudentData(studentId) {
+            // Mock data fetching. In a real app, this would be an API call.
+            const studentsData = {
+                "S1001": { "id": "S1001", "name": "Alex Johnson", "average": 88, "reading": 92, "writing": 85, "speaking": 88, "listening": 87, "notes": "Alex shows great potential in literature analysis." },
+                "S1002": { "id": "S1002", "name": "Maria Garcia", "average": 91, "reading": 89, "writing": 94, "speaking": 90, "listening": 91, "notes": "Maria is an excellent writer and actively participates in discussions." }
+            };
+            return studentsData[studentId];
+        }
+
+        logoutBtn.addEventListener('click', function() {
+            currentStudent = null;
+            loginSection.classList.remove('d-none');
+            dashboardSection.classList.add('d-none');
+            studentWelcome.classList.add('d-none');
+            logoutBtn.classList.add('d-none');
+            loginForm.reset();
+            if (performanceChart) {
+                performanceChart.destroy();
+                performanceChart = null;
+            }
+        });
+
+        downloadReportBtn.addEventListener('click', function() {
+            const element = document.getElementById('dashboardSection');
+            const opt = {
+                margin:       1,
+                filename:     `student-report-${currentStudent.id}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            html2pdf().from(element).set(opt).save();
+        });
+
+        function showStudentDashboard(student) {
+            loginSection.classList.add('d-none');
+            dashboardSection.classList.remove('d-none');
+            studentWelcome.classList.remove('d-none');
+            logoutBtn.classList.remove('d-none');
+            
+            document.getElementById('dashboardStudentName').textContent = student.name;
+            currentStudentName.textContent = student.name;
+            document.getElementById('dashboardAverageScore').textContent = student.average;
+            
+            document.getElementById('dashboardReadingStat').textContent = student.reading;
+            document.getElementById('dashboardWritingStat').textContent = student.writing;
+            document.getElementById('dashboardSpeakingStat').textContent = student.speaking;
+            document.getElementById('dashboardListeningStat').textContent = student.listening;
+            
+            updateDashboardSkillBar('dashboardReading', student.reading);
+            updateDashboardSkillBar('dashboardWriting', student.writing);
+            updateDashboardSkillBar('dashboardSpeaking', student.speaking);
+            updateDashboardSkillBar('dashboardListening', student.listening);
+            
+            document.getElementById('dashboardTeacherNotes').textContent = student.notes;
+            
+            updateDashboardPerformanceChart(student);
+        }
+
+        function updateDashboardSkillBar(skill, value) {
+            const bar = document.getElementById(`${skill}Bar`);
+            const text = document.getElementById(`${skill}Text`);
+            bar.style.width = `${value}%`;
+            text.textContent = `${value}/100`;
+        }
+
+        function updateDashboardPerformanceChart(student) {
+            const ctx = document.getElementById('dashboardPerformanceChart').getContext('2d');
+            if (performanceChart) {
+                performanceChart.destroy();
+            }
+            performanceChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Reading', 'Writing', 'Speaking', 'Listening'],
+                    datasets: [{
+                        label: 'Skill Level',
+                        data: [student.reading, student.writing, student.speaking, student.listening],
+                        backgroundColor: 'rgba(74, 144, 226, 0.2)',
+                        borderColor: 'rgba(74, 144, 226, 1)',
+                        pointBackgroundColor: 'rgba(74, 144, 226, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(74, 144, 226, 1)'
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { display: false },
+                            suggestedMin: 0,
+                            suggestedMax: 100
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
